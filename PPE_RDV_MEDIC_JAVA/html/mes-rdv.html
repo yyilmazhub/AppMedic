@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/carte.css">
+
+    <!-- JQUERY -->
+    <script type="text/javascript" src="../javascript/jquery.js"></script>
+
+    <script>
+        //Vérificaiton du cookie, si no connecté alors redirection sur la page de connexion.
+        if ((document.cookie.split(';').some((item) => item.trim().startsWith('token='))) == false) {
+            window.location.replace("./connexion.html");
+        }
+    </script>
+
+    <title>Mes rendez-vous</title>
+</head>
+<body>
+    <header>
+        <div class="container-fluid header">
+
+            <input id="nav-toggle" type="checkbox">
+
+            <p class="name"> Médecins Généralistes | Issy-Les-Moulineaux</p>
+
+            <nav class="menu">
+                <a href="../carte.html" class="tab">Accueil</a>
+                <a href="" id="deconnexion" class="tab">Déconnexion</a>
+            </nav>
+
+            <label for="nav-toggle" class="icon-burger">
+                <div class="line"></div>
+                <div class="line"></div>
+                <div class="line"></div>
+            </label>
+
+        </div>
+    </header>
+
+    <script>
+
+        //Fonction qui retourne la valeur d'un cookie pour l'envoi en JSON.
+        function getCookie(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for(var i = 0; i <ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+        return "";
+        }
+
+        //Définition des variables.
+        var token = getCookie('token');
+        var rdv = "";
+
+        //Appel des rendez-vous.
+        $.ajax({
+
+            //Envoi de la requête JSON PUT.
+            type: "PUT",
+            cache: false,
+            crossDomain: true,
+            url: "../../PPE_RDV_MEDIC_JSON/?action=rdv",
+            dataType: "json",
+
+            //Serialization du token et envoi.
+            data: JSON.stringify({
+
+                "token": token
+            }),
+
+            //Valide : on traite tout les rendez-vous avant de les afficher.
+            success: function(listeRdv){
+
+                //Récupération de tout les médecins.
+                $.ajax({
+
+                    url: "https://data.issy.com/api/records/1.0/search/?dataset=medecins-generalistes-et-infirmiers&rows=100",
+                    type: "GET",
+                    dataType: "json",
+
+                    success: function(listeMedecins) {
+
+                        //Boucle sur tout les rendez-vous reçus.
+                        $.each(listeRdv, function(cleRdv, valeurRdv) {
+
+                        //Séparation de la date et de l'heure.
+                        var dateHeureSplit = valeurRdv.dateHeureRdv.split(" ");
+                        var dateSplit = dateHeureSplit[0].split("-");
+                        var date = dateSplit[2] + "/" + dateSplit[1] + "/" + dateSplit[0];
+
+                        var heureSplit = dateHeureSplit[1].split(":");
+                        var heure = heureSplit[0] + "h" + heureSplit[1];
+
+                        var nomMedecin = null;
+
+                        $.each(listeMedecins.records, function(cleMedecin, valeurMedecin) {
+
+                            if(valeurMedecin.recordid == valeurRdv.idMedecin) {
+                                nomMedecin = valeurMedecin.fields.nom + " " + valeurMedecin.fields.prenom;
+                            }
+                        });
+
+                        console.log(nomMedecin);
+
+                        //VOIR BOUTON POUR MODIFIER / SUPPRIMER
+                        rdv = "<tr><td class=\"text-center\">" + date + "</td><td class=\"text-center\">" + heure + "</td><td class=\"text-center\">" + nomMedecin + "</td><td class=\"text-center\"><button class=\"btn btn-outline-primary boutton\" id=\"modifier\" value=\"" + valeurRdv.idRdv + "\" onclick=\"modifier(" + valeurRdv.idRdv + ")\" >Modifier</button></td><td class=\"text-center\"><button class=\"btn btn-outline-primary boutton\" id=\"supprimer\" value=\"" + valeurRdv.idRdv + "\" onclick=\"supprimer(" + valeurRdv.idRdv + ")\" >Supprimer</button></td></tr>";
+
+                        //Affichage des rendez-vous dans le tableau.
+                        $(".lesRdv").prepend(rdv);
+
+                        });
+                    }
+                });
+            },
+            error: function(data){
+                console.log("erreur");
+            }
+        });
+
+    </script>
+
+    <div class="container contenu">
+        <h1 class="titre-rdv">Mes rendez-vous</h1>
+        <br />
+        <table class="table" id="tableRdv">
+            <thead>
+                <tr>
+                    <th class="text-center">Date du rendez-vous</th>
+                    <th class="text-center">Heure du rendez-vous</th>
+                    <th class="text-center">Nom du médecin</th>
+                    <th class="text-center">Modifier le rendez-vous</th>
+                    <th class="text-center">Supprimer le rendez-vous</th>
+                </tr>
+            </thead>
+            <tbody class="lesRdv">
+
+            </tbody>
+        </table>
+    </div>
+
+    <footer class="container-fluid footer">
+        <div class="text-center">
+            <a href="./politique-cookies.html">Politique de protection des données personnelles</a> | <a href="./preferences-cookies.html">Préférences cookies</a>
+        </div>
+    </footer>
+
+    <script>
+
+        function supprimer(idRdv)
+        {
+            $.ajax({
+
+                type: "DELETE",
+                cache: false,
+                crossDomain: true,
+                url : "../../PPE_RDV_MEDIC_JSON?action=rdv",
+                dataType: "json",
+
+                data: JSON.stringify({
+
+                    "token": token,
+                    "idRdv": idRdv
+                }),
+
+                //Valide : suppression du cookie "token" et redirection vers la carte.
+                success: function(data){
+                    window.location.replace("./mes-rdv.html");
+                },
+                error: function(data){
+                    console.log("erreur de suppression de rdv");
+                }
+            });
+        }
+
+        function modifier(idRdv)
+        {
+            sessionStorage.setItem('idRdv', idRdv);
+            window.location.replace("./modifier-rdv.html")
+        }
+
+        //Fonction de déconnexion.
+        $('#deconnexion').click(function(e)
+        {
+            e.preventDefault();
+
+            $.ajax({
+
+                //Envoi de la requête JSON DELETE.
+                type: "DELETE",
+                cache: false,
+                crossDomain: true,
+                url : "../../PPE_RDV_MEDIC_JSON?action=patient",
+                dataType: "json",
+
+                //Serialization du token et envoi.
+                data: JSON.stringify({
+
+                    "token": token
+                }),
+
+                //Valide : suppression du cookie "token" et redirection vers la carte.
+                success: function(data){
+                    document.cookie = "token=;expires=Wed, 21 Oct 2015 07:28:00 GMT;path=/";
+                    window.location.replace("../carte.html");
+                },
+                error: function(data){
+                    console.log("erreur de deconnexion");
+                }
+            });
+        });
+
+    </script>
+
+</body>
+</html>

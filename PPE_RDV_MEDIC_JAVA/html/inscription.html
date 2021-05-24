@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/carte.css">
+    <link rel="stylesheet" href="../css/inscription.css">
+
+    <!-- JQUERY -->
+    <script type="text/javascript" src="../javascript/jquery.js"></script>
+
+    <!-- Cookie -->
+    <link rel="stylesheet" type="text/css" href="../css/purecookie.css" async />
+
+    <script src="../javascript/purecookie.js" async></script>
+
+    <script>
+        //Vérification du cookie, si connecté alors redirection sur la carte.
+        if (document.cookie.split(';').some((item) => item.trim().startsWith('token='))) {
+            window.location.replace("../carte.html");
+        }
+    </script>
+
+    <title>Inscription</title>
+    </head>
+    <body>
+    <div class="container-fluid header">
+        <input id="nav-toggle" type="checkbox">
+        <p class="name"> Médecins Généralistes | Issy-Les-Moulineaux</p>
+        <nav class="menu">
+            <a href="../carte.html" class="tab">Accueil</a>
+            <a href="connexion.html" class="tab">Connexion</a>
+        </nav>
+        <label for="nav-toggle" class="icon-burger">
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="line"></div>
+        </label>
+    </div>
+
+    <div class="container contenu">
+        <form>
+            <div class="form-group">
+                <label>Nom :</label>
+                <input type="text" class="form-control" id="nom">
+            </div>
+            <div class="form-group">
+            <label>Prénom :</label>
+            <input type="text" class="form-control" id="prenom">
+            </div>
+            <div class="form-group">
+            <label>Rue :</label>
+            <input type="text" class="form-control" id="rue">
+            </div>
+            <div class="form-group">
+            <label>Code Postal :</label>
+            <input type="text" class="form-control" id="cp">
+            </div>
+            <div class="form-group">
+            <label>Ville :</label>
+            <input type="text" class="form-control" id="ville">
+            </div>
+            <div class="form-group">
+            <label>N° de Téléphone :</label>
+            <input type="text" class="form-control" id="numtel">
+            </div>
+            <div class="form-group">
+            <label>Login :</label>
+            <input type="text" class="form-control" id="login">
+            </div>
+            <div class="form-group">
+            <label>Mot de Passe :</label>
+            <input type="password" class="form-control" id="password">
+            </div>
+            <div id="etat"></div>
+            <div id="erreur"></div>
+            <button type="button" class="btn btn-outline-primary boutton" id="inscription">Valider</button>
+        </form>
+    </div>
+
+    <footer class="container-fluid footer">
+        <div class="text-center">
+            <a href="./politique-cookies.html">Politique de protection des données personnelles</a> | <a href="./preferences-cookies.html">Préférences cookies</a>
+        </div>
+    </footer>
+
+    <script>
+
+        //Fonction qui retourne la valeur d'un cookie pour l'envoi en JSON.
+        function getCookie(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for(var i = 0; i <ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+        return "";
+        }
+
+        //Fonction d'inscription.
+        $('#inscription').click(function(e)
+        {
+            if (getCookie("choix") == "yes") {
+                //Définition des variables.
+                e.preventDefault();
+                var nomPatient = $('#nom').val();
+                var prenomPatient = $('#prenom').val();
+                var ruePatient = $('#rue').val();
+                var cpPatient = $('#cp').val();
+                var villePatient = $('#ville').val();
+                var telPatient = $('#numtel').val();
+                var loginPatient = $('#login').val();
+                var passwordPatient = $('#password').val();
+
+                //Envoi de la requête JSON POST.
+                $.ajax({
+                    type: "POST",
+                    cache: false,
+                    crossDomain: true,
+                    url : "../../PPE_RDV_MEDIC_JSON/?action=patient",
+                    dataType: 'json',
+
+                    //Serialization des données.
+                    data: JSON.stringify({
+
+                        "nom": nomPatient,
+                        "prenom": prenomPatient,
+                        "rue": ruePatient,
+                        "cp": cpPatient,
+                        "ville": villePatient,
+                        "tel": telPatient,
+                        "login": loginPatient,
+                        "mdp": passwordPatient
+                    }),
+
+                    //Valide : redirection vers la page de connexion.
+                    success: function(data){
+                        window.location.replace("./connexion.html");
+                    },
+                    error: function(data){
+                        console.log("erreur d'inscription'");
+                    }
+
+                
+
+                });
+            }
+            else
+            {
+                alert("Veuillez accepter les cookies afin d'utiliser le site");
+            }
+
+        });
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/carte.css">
+
+    <!-- JQUERY -->
+    <script type="text/javascript" src="../javascript/jquery.js"></script>
+
+    <script>
+        //Vérificaiton du cookie, si no connecté alors redirection sur la page de connexion.
+        if ((document.cookie.split(';').some((item) => item.trim().startsWith('token='))) == false) {
+            window.location.replace("./connexion.html");
+        }
+        if(sessionStorage.getItem('idRdv') == null) {
+            window.location.replace("../carte.html");
+        }
+    </script>
+
+    <title>Modifier un rendez-vous</title>
+</head>
+<body>
+    <header>
+        <div class="container-fluid header">
+
+            <input id="nav-toggle" type="checkbox">
+
+            <p class="name"> Médecins Généralistes | Issy-Les-Moulineaux</p>
+
+            <nav class="menu">
+                <a href="../carte.html" class="tab">Accueil</a>
+                <a href="mes-rdv.html" class="tab">Mes rendez-vous</a>
+                <a href="" id="deconnexion" class="tab">Déconnexion</a>
+            </nav>
+
+            <label for="nav-toggle" class="icon-burger">
+                <div class="line"></div>
+                <div class="line"></div>
+                <div class="line"></div>
+            </label>
+
+        </div>
+    </header>
+
+    <div class="container">
+        <form method ="POST">
+            <br />
+            <br />
+            <br />
+            <br />
+            <div class="form-group">
+                <label for="heureRDV">Date du RDV :</label>
+                <input type="date" class="form-control" id="dateRDV" placeholder="Date du RDV">
+                <label for="heureRDV">Heure de RDV :</label>
+                <input type="time" required class="form-control" id="heureRDV" placeholder="Heure du RDV">
+            </div>
+              <button type="button" class="btn btn-outline-primary boutton" id="confirmer">Confirmer</button>
+              <div id="etat"></div>
+              <div id="erreur"></div>
+        </form>
+    </div>
+
+    <footer class="container-fluid footer">
+        <div class="text-center">
+            <a href="./politique-cookies.html">Politique de protection des données personnelles</a> | <a href="./preferences-cookies.html">Préférences cookies</a>
+        </div>
+    </footer>
+
+    <script>
+
+        //Fonction qui retourne la valeur d'un cookie pour l'envoi en JSON.
+        function getCookie(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for(var i = 0; i <ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+        return "";
+        }
+
+        //Chargement des infos du rdv.
+        var token = getCookie('token');
+        var idRdv = sessionStorage.getItem('idRdv');
+        var rdv = "";
+
+        //Appel des rendez-vous.
+        $.ajax({
+
+            //Envoi de la requête JSON PUT.
+            type: "PUT",
+            cache: false,
+            crossDomain: true,
+            url: "../../PPE_RDV_MEDIC_JSON/?action=rdv",
+            dataType: "json",
+
+            //Serialization du token et envoi.
+            data: JSON.stringify({
+
+                "token": token
+            }),
+
+            //Valide : on traite tout les rendez-vous avant de les afficher.
+            success: function(data){
+                //Boucle sur tout les rendez-vous reçus.
+                $.each(data, function(key, value) {
+
+                    if(idRdv == value.idRdv) {
+                        rdv = value;
+                    }
+                });
+
+                var dateHeureSplit = rdv.dateHeureRdv.split(" ");
+
+                document.getElementById("dateRDV").value = dateHeureSplit[0];
+                document.getElementById("heureRDV").value = dateHeureSplit[1];
+            },
+            error: function(data){
+                console.log("erreur");
+            }
+        });
+
+        $('#confirmer').click(function(e)
+        {
+            e.preventDefault();
+            var dateHeure = document.getElementById("dateRDV").value + " " + document.getElementById("heureRDV").value;
+
+            $.ajax({
+
+            type: "PATCH",
+            cache: false,
+            crossDomain: true,
+            url : "../../PPE_RDV_MEDIC_JSON?action=rdv",
+            dataType: "json",
+
+            //Sérialization des données.
+            data: JSON.stringify({
+
+                "token": token,
+                "idRdv": idRdv,
+                "date": dateHeure
+            }),
+
+            //Valide : suppression du cookie "token" et redirection vers la carte.
+            success: function(data){
+                window.location.replace("./mes-rdv.html");
+            },
+            error: function(data){
+                console.log("erreur de deconnexion");
+            }
+
+            });
+        });
+
+        //Fonction de déconnexion.
+        $('#deconnexion').click(function(e)
+        {
+            //Définiiton des variables.
+            e.preventDefault();
+
+            //Envoi de la requête JSON DELETE.
+            $.ajax({
+
+                type: "DELETE",
+                cache: false,
+                crossDomain: true,
+                url : "../../PPE_RDV_MEDIC_JSON?action=patient",
+                dataType: "json",
+
+                //Sérialization des données.
+                data: JSON.stringify({
+
+                    "token": token
+                }),
+
+                //Valide : suppression du cookie "token" et redirection vers la carte.
+                success: function(data){
+                    document.cookie = "token=;expires=Wed, 21 Oct 2015 07:28:00 GMT;path=/";
+                    window.location.replace("../carte.html");
+                },
+                error: function(data){
+                    console.log("erreur de deconnexion");
+                }
+
+            });
+        });
+
+        
+
+    </script>
+
+</body>
+</html>

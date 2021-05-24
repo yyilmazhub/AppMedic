@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/carte.css">
+
+    <!-- JQUERY -->
+    <script type="text/javascript" src="../javascript/jquery.js"></script>
+
+    <!-- Cookie -->
+    <link rel="stylesheet" type="text/css" href="../css/purecookie.css" async />
+
+    <script src="../javascript/purecookie.js" async></script>
+
+    <script>
+        //Vérification du cookie, si connecté alors redirection sur la carte.
+        if (document.cookie.split(';').some((item) => item.trim().startsWith('token='))) {
+            window.location.replace("../carte.html");
+        }
+    </script>
+
+    <title>Connexion</title>
+</head>
+<body>
+    <div class="container-fluid header">
+        <input id="nav-toggle" type="checkbox">
+        <p class="name"> Médecins Généralistes | Issy-Les-Moulineaux</p>
+        <nav class="menu">
+            <a href="../carte.html" class="tab">Accueil</a>
+            <a href="inscription.html" class="tab">Inscription</a>
+        </nav>
+        <label for="nav-toggle" class="icon-burger">
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="line"></div>
+        </label>
+    </div>
+
+    <div class="container contenu">
+        <form>
+            <div class="form-group">
+                <label>Login :</label>
+                <input type="text" class="form-control" id="login" placeholder="Votre Login">
+            </div>
+            <div class="form-group">
+                <label>Mot de Passe :</label>
+                <input type="password" class="form-control" id="password" placeholder="Votre Mot de Passe">
+            </div>
+
+            <button type="button" class="btn btn-outline-primary boutton" id="valider">Valider</button>
+
+            <div id="erreur">
+
+            </div>
+        </form>
+    </div>
+
+    <footer class="container-fluid footer">
+        <div class="text-center">
+            <a href="./politique-cookies.html">Politique de protection des données personnelles</a> | <a href="./preferences-cookies.html">Préférences cookies</a>
+        </div>
+    </footer>
+
+    <script>
+
+        //Fonction qui retourne la valeur d'un cookie pour l'envoi en JSON.
+        function getCookie(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for(var i = 0; i <ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+        return "";
+        }
+
+        console.log(document.cookie);
+
+        //Fonction de connexion.
+        $('#valider').click(function(e)
+        {
+
+            if (getCookie("choix") == "yes") {
+
+                //Définition des variables.
+                e.preventDefault();
+                var loginval = $('#login').val();
+                var passwordval = $('#password').val();
+
+                //Envoi de la requête JSON PUT.
+                $.ajax({
+
+                    type: "PUT",
+                    cache: false,
+                    crossDomain: true,
+                    url : "../../PPE_RDV_MEDIC_JSON?action=patient",
+                    dataType: "json",
+
+                    //Sérialization des données.
+                    data: JSON.stringify({
+
+                        "login": loginval,
+                        "mdp": passwordval
+                    }),
+
+                    //Valide : mise en place du cookie puis redirection sur la carte.
+                    success: function(data){
+                        //Mise en place du cookie et de sa date d'expiration (mois actuel + mois d'après).
+                        var dateExpiration = new Date();
+                        dateExpiration.setMonth(dateExpiration.getMonth() + 13);
+
+                        document.cookie = "token=" + data.token + "; expires=" + dateExpiration + "; path=/";
+                        window.location.replace("../carte.html");
+                    },
+                    error: function(data){
+                        document.getElementById("erreur").innerHTML = "<div class=\"alert alert-danger\" role=\"alert\">Login ou mot de passe incorrect</div>";
+                    }
+
+                });
+            }
+            else
+            {
+                window.alert("Veuillez accepter les cookies afin d'utiliser le site");
+            }
+        });
+
+    </script>
+
+</body>
+</html>

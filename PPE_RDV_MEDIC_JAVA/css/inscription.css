@@ -1,0 +1,10 @@
+.boutton{
+    float: right;
+}
+
+#etat {
+    color: green;
+}
+#erreur{
+    color: red;
+}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/carte.css">
+
+    <!-- JQUERY -->
+    <script type="text/javascript" src="../javascript/jquery.js"></script>
+
+    <!-- Cookie -->
+    <link rel="stylesheet" type="text/css" href="../css/purecookie.css" async />
+
+    <script src="../javascript/purecookie.js" async></script>
+
+    <title>Politique de protection des données</title>
+</head>
+<body>
+    <div class="container-fluid header">
+        <input id="nav-toggle" type="checkbox">
+        <p class="name"> Médecins Généralistes | Issy-Les-Moulineaux</p>
+        <nav class="menu">
+            <a href="../carte.html" class="tab">Accueil</a>
+        </nav>
+        <label for="nav-toggle" class="icon-burger">
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="line"></div>
+        </label>
+    </div>
+
+    <br />
+    <p id="cookieName">Accéder à mes cookies : </p>
+    <button class="btn btn-outline-primary boutton" onclick="supprimerCookie()">Supprimer les cookies</button>
+    <button class="btn btn-outline-primary boutton" onclick="accepterCookies()">Accepter les cookies</button>
+
+    <script>
+
+        //Fonction qui retourne la valeur d'un cookie pour l'envoi en JSON.
+        function getCookie(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for(var i = 0; i <ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+        return "";
+        }
+
+        document.getElementById("cookieName").innerHTML = "Cookie de token : " + getCookie("token") + " | Cookie de consentement : " + getCookie("choix");
+
+        function supprimerCookie() {
+
+            var token = getCookie("token");
+
+            //Envoi de la requête JSON DELETE.
+            $.ajax({
+
+                type: "DELETE",
+                cache: false,
+                crossDomain: true,
+                url : "../../PPE_RDV_MEDIC_JSON?action=patient",
+                dataType: "json",
+
+                //Sérialization des données.
+                data: JSON.stringify({
+
+                    "token": token
+                }),
+
+                //Valide : suppression du cookie "token" et redirection vers la carte.
+                success: function(data){
+                    document.cookie = "choix=;expires=Wed, 21 Oct 2015 07:28:00 GMT;path=/";
+                    document.cookie = "token=;expires=Wed, 21 Oct 2015 07:28:00 GMT;path=/";
+                    document.location.reload();
+                },
+                error: function(data){
+                    document.cookie = "choix=;expires=Wed, 21 Oct 2015 07:28:00 GMT;path=/";
+                    document.cookie = "token=;expires=Wed, 21 Oct 2015 07:28:00 GMT;path=/";
+                    document.location.reload();
+                }
+
+            });
+        }
+
+        function accepterCookies() {
+            var dateExpiration = new Date();
+            dateExpiration.setMonth(dateExpiration.getMonth() + 13);
+
+            document.cookie = "choix=yes; expires=" + dateExpiration + "; path=/";
+
+            document.location.reload();
+        }
+
+        console.log(document.cookie);
+    </script>
+
+    </body>
+</html>
